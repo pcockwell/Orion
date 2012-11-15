@@ -150,6 +150,43 @@ class Orion extends CI_Controller {
         $dashboard->dashboard_name = '';
         $dashboard->category_name = $graph->graph_name;
         $dashboard->restricted = 0; 
+
+        get_all_graph_data($graph);
+        $dashboard->graphs = array($graph);
+        
+        $navigation = array();
+        $links = array();
+
+        $all_categories = $this->CategoryModel->get_all_categories();
+
+        foreach ( $all_categories as $category ){
+            $category_id = $category->id;
+            $name = $category->category_name;
+
+            $dashboards = $this->DashboardModel->get_dashboards_by_category_id($category_id);
+            foreach ( $dashboards as $nav_dashboard ){
+                if (!$nav_dashboard->restricted){
+                    $navigation[$name][] = $nav_dashboard;
+                }else if ( $this->UserModel->has_permission($this->user->email, 'restricted') ){
+                    $navigation[$name][] = $nav_dashboard;
+                }
+            }
+
+            if (array_key_exists($name,$navigation)){
+                $links[$name] = $this->LinkModel->get_links_by_category_id($category_id);
+            }
+        }
+
+        $location = "orion/view_graph/?graph=" . $graph->id;
+        if( isset($from) && isset($until) ){
+            $location .= "&from=" . $from . "&until=" . $until;
+        }
+
+        $this->data['navigation'] = $navigation;
+        $this->data['links'] = $links;
+        $this->data['dashboard_json'] = $dashboard;
+        $this->data['location'] = $location;
+        $this->load->view('home', $this->data);
     }
 
     function view_metric(){

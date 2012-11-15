@@ -4,7 +4,7 @@
 <script src="<?php echo base_url();?>js/libs/jquery-ui-1.8.21.custom.min.js"></script>
 <script src="<?php echo base_url();?>js/libs/underscore-min.js"></script>
 
-<?php if (strpos($location, 'index') !== false || strpos($location, 'view_metric') !== false) { ?>
+<?php if (strpos($location, 'index') !== false || strpos($location, 'view_metric') !== false || strpos($location, 'view_graph') !== false) { ?>
 
 <script src="<?php echo base_url();?>js/libs/highcharts/highstock.js"></script>
 <script src="<?php echo base_url();?>js/libs/jquery-ui-timepicker-addon.js"></script>

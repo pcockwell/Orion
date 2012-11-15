@@ -249,7 +249,7 @@ var APP = APP || {};
                                         middleButton = ( e.button == 4 );
                                     }
                                     if ( middleButton == true ){
-                                        alert("Middle button clicked");
+                                        window.open( APP.Setup.get_base_path() + 'index.php/orion/view_graph?graph=' + graph.id, '_blank');
                                     }
                                 }
                             }
