@@ -141,6 +141,17 @@ class Orion extends CI_Controller {
         echo json_encode($new_data);
     }
 
+    function view_graph(){
+        $graph_id = $this->input->get('graph');
+
+        $graph = $this->GraphModel->get_by_id($graph_id);
+
+        $dashboard = $this->DashboardModel->create();
+        $dashboard->dashboard_name = '';
+        $dashboard->category_name = $graph->graph_name;
+        $dashboard->restricted = 0; 
+    }
+
     function view_metric(){
 
         $metric_name = $this->input->get('metric');

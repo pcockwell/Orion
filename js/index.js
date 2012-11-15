@@ -240,6 +240,17 @@ var APP = APP || {};
                             events: {
                                 load: function () {
                                     APP.INDEX.Graphs.updateGraph(this, allMetricInfo);
+                                },
+                                click: function(e) {
+                                    var middleButton = false;
+                                    if ( e.which ){
+                                        middleButton = ( e.which == 2 );
+                                    }else if ( e.button ){
+                                        middleButton = ( e.button == 4 );
+                                    }
+                                    if ( middleButton == true ){
+                                        alert("Middle button clicked");
+                                    }
                                 }
                             }
                         },
