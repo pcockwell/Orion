@@ -12,63 +12,38 @@ class Authenticate extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        $this->load->helper('authenticate');
+        $auth_method = strtolower($this->orion_config['AUTHENTICATION_METHOD']);
+        $auth_helper = $auth_method . '_authentication';
+        $this->load->helper($auth_helper);
+
         session_start();
     }
 
     public function index(){
 
-        $client = new apiClient();
-        $client->setApplicationName($this->orion_config['GOOGLE_OAUTH_APPLICATION_NAME']);
-        $oauth2 = new apiOauth2Service($client);
-
         $token = $this->session->userdata('token');
+        //If user logged in, log them out
         if ($token) {
-            $this->session->unset_userdata('token');
-            $this->session->unset_userdata('name');
-            $this->session->unset_userdata('user');
-            redirect('orion');
-        } else {
-            if ( $this->input->get('location') ){
-                $client->setState($this->input->get('location'));
-            }
-            $authUrl = $client->createAuthUrl();
+            self::logout();
         }
 
-        redirect($authUrl);
+        //Otherwise log them in
+        self::login();
+
+    }
+
+    private function login(){
+
+        auth_login($this->input->get());
+
     }
 
     public function logout(){
-        logout(true);
+        auth_logout( true );
     }
 
-    public function googleoauth2callback(){
-        $client = new apiClient();
-        $client->setApplicationName($this->orion_config['GOOGLE_OAUTH_APPLICATION_NAME']);
-        $oauth2 = new apiOauth2Service($client);
-
-        if ($this->input->get('code')) {
-            $client->authenticate();
-            $this->session->set_userdata(array('token' => $client->getAccessToken()));
-
-            $user_info = $oauth2->userinfo->get();
-            $this->session->set_userdata(array('name' => $user_info['name']));
-
-            // These fields are currently filtered through the PHP sanitize filters.
-            // See http://www.php.net/manual/en/filter.filters.sanitize.php
-            $email = filter_var($user_info['email'], FILTER_SANITIZE_EMAIL);
-            $user = $this->UserModel->authenticate($email);
-            $this->session->set_userdata(array('user' => json_encode($user)));
-
-            $redirect = urldecode($this->input->get('state'));
-            if (!$redirect){
-                $redirect = "orion";
-            }
-            redirect($redirect);
-        }else if ( $this->input->get('error') == 'access_denied' ){
-            redirect('orion');
-        }
-        redirect('orion');
+    public function authenticate_callback(){
+        auth_callback($this->input->get());
     }
 
 }
