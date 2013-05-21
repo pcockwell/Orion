@@ -132,11 +132,27 @@ class Orion extends CI_Controller {
     }
 
     function view_metric(){
-        $metric_name = $this->input->get('metric');
+        $url_metric_string = "";
+
+        $metric_names = $this->input->get('metric');
+        if (!is_array($metric_names)){
+            $url_metric_string = "metric=" . $metric_names;
+            $metric_names = array($metric_names);
+        }else{
+            $metric_strings = array();
+            foreach($metric_names as $m){
+                $metric_strings[] = "metric[]=" . $m;
+            }
+            $url_metric_string = implode("&", $metric_strings);
+        }
         $from = $this->input->get('from');
         $until = $this->input->get('until');
 
-        $dashboard = $this::_setup_view_metric($metric_name, $from, $until);
+        $function = $this->input->get('function') ? $this->input->get('function') : null;
+        $from_suffix = $this->input->get('from_suffix') ? $this->input->get('from_suffix') : GraphiteModel::HOURS;
+        $until_suffix = $this->input->get('until_suffix') ? $this->input->get('until_suffix') : GraphiteModel::HOURS ;
+
+        $dashboard = $this::_setup_view_metric($metric_names, $from, $from_suffix, $until, $until_suffix, $function);
 
         $navigation = array();
         $links = array();
@@ -160,7 +176,7 @@ class Orion extends CI_Controller {
             }
         }
 
-        $location = "orion/view_metric/?metric=" . $metric_name . "&from=" . $from . "&until=" . $until;
+        $location = "orion/view_metric/?" . $url_metric_string . "&from=" . $from . "&until=" . $until;
         $this->data['navigation'] = $navigation;
         $this->data['links'] = $links;
         $this->data['dashboard_json'] = $dashboard;
@@ -170,30 +186,43 @@ class Orion extends CI_Controller {
     }
 
     function embed() {
-        $metric_name = $this->input->get('metric');
+        $url_metric_string = "";
+
+        $metric_names = $this->input->get('metric');
+        if (!is_array($metric_names)){
+            $url_metric_string = "metric=" . $metric_names;
+            $metric_names = array($metric_names);
+        }else{
+            $metric_strings = array();
+            foreach($metric_names as $m){
+                $metric_strings = "metric[]=" . $metric_names;
+            }
+            $url_metric_string = implode("&", $metric_strings);
+        }
         $from = $this->input->get('from');
         $until = $this->input->get('until');
-        $function = $this->input->get('function');
 
-        $from_suffix = $this->input->get('from_suffix') ? $this->input->get('from_suffix') : GraphiteModel::HOURS ;
+        $function = $this->input->get('function') ? $this->input->get('function') : null;
+        $from_suffix = $this->input->get('from_suffix') ? $this->input->get('from_suffix') : GraphiteModel::HOURS;
         $until_suffix = $this->input->get('until_suffix') ? $this->input->get('until_suffix') : GraphiteModel::HOURS ;
 
 
-        $dashboard = $this::_setup_view_metric($metric_name, $from, $from_suffix, $until, $until_suffix, $function);
+        $dashboard = $this::_setup_view_metric($metric_names, $from, $from_suffix, $until, $until_suffix, $function);
 
         $this->data['dashboard_json'] = $dashboard;
-        $this->data['location'] = "orion/embed/?metric=" . $metric_name . "&from=" . $from . "&until=" . $until;
+        $this->data['location'] = "orion/embed/?" . $url_metric_string . "&from=" . $from . "&until=" . $until;
 
         $this->load->view('embed', $this->data);
     }
 
-    private function _setup_view_metric($metric_name, $from, $from_suffix, $until, $until_suffix, $function = null){
+    private function _setup_view_metric($metric_names, $from, $from_suffix, $until, $until_suffix, $function = null){
 
-        $metric_names = explode(',', $metric_name);
-
+        foreach($metric_names as $m){
+            remove_from_front($m,$this->orion_config['METRIC_PREFIX']);
+        }
         $dashboard = $this->DashboardModel->create();
         $dashboard->dashboard_name = ''; 
-        $dashboard->category_name = remove_from_front($metric_name,$this->orion_config['METRIC_PREFIX']);
+        $dashboard->category_name = $function . "(" . join(", ", $metric_names) . ")";
         $dashboard->restricted = 0;
 
         $graph = $this->GraphModel->create();
@@ -207,7 +236,7 @@ class Orion extends CI_Controller {
         $transformed_metric_names = $metric_names;
         if( $function ) {
             $metric_name = implode( ",", $metric_names );
-            $transformed_metric_names = array( $metric_name );
+            $transformed_metric_names = array( $function . "(" . $metric_name . ")" );
         }
 
         $i = 0;
